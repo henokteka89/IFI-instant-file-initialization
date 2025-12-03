@@ -2,3 +2,30 @@
 select  instant_file_initialization_enabled
 from sys.dm_server_services
 where servicename like 'sql server (%'
+
+
+
+# Variables
+$organization = "YourOrg"
+$project = "YourProject"
+$wikiName = "YourProject.wiki"
+$pagePath = "/DB/RedirectReads"   # path to the wiki page
+$pat = "YOUR_PAT_HERE"            # store securely normally
+
+# Base64-encode PAT
+$token = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$pat"))
+
+# API URL
+$url = "https://dev.azure.com/$organization/$project/_apis/wiki/wikis/$wikiName/pages?path=$pagePath&includeContent=true&api-version=7.0"
+
+# Call API
+$response = Invoke-RestMethod -Uri $url -Method Get -Headers @{Authorization="Basic $token"}
+
+# Extract the content
+$content = $response.page.content
+
+# Write the content to a local .sql file
+$filePath = "C:\temp\redirect_reads.sql"
+$content | Out-File -FilePath $filePath -Encoding UTF8
+
+Write-Host "Saved wiki script to $filePath"
